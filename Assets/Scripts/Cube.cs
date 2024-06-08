@@ -1,0 +1,64 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(MeshRenderer))]
+public class Cube : MonoBehaviour
+{
+    [SerializeField] private List<Color> _colors = new List<Color>();
+
+    private MeshRenderer _meshRenderer;
+    private Color _currentColor;
+    private bool _isTouched = false;
+    private float _lifeTime;
+    private float _minLifeTimeThreshold = 2;
+    private float _maxLifeTimeThreshold = 5;
+    private Coroutine _waitBeforeDisappearingCoroutine;
+
+    public Color StartColor => _currentColor;
+    public MeshRenderer MeshRenderer => _meshRenderer;
+
+    public event Action<Cube> Disappearing;
+
+    private void Awake()
+    {
+        _meshRenderer = GetComponent<MeshRenderer>();
+        _currentColor = _meshRenderer.material.color;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (_isTouched == false)
+        {
+            if (collision.gameObject.TryGetComponent(out Platform platform))
+            {
+                if (_waitBeforeDisappearingCoroutine != null)
+                {
+                    StopCoroutine(_waitBeforeDisappearingCoroutine);
+                }
+
+                _isTouched = true;
+                _lifeTime = GetLifeTime();
+                _meshRenderer.material.color = GetColor();
+                _waitBeforeDisappearingCoroutine = StartCoroutine(WaitBeforeDisappearing());
+            }
+        }
+    }
+
+    public void ResetLifeTime() => _lifeTime = 0;
+
+    private IEnumerator WaitBeforeDisappearing()
+    {
+        WaitForSeconds waitTime = new WaitForSeconds(_lifeTime);
+
+        yield return waitTime;
+
+        _isTouched = false;
+        Disappearing?.Invoke(this);
+    }
+
+    private Color GetColor() => _colors[UnityEngine.Random.Range(0, _colors.Count - 1)];
+
+    private float GetLifeTime() => UnityEngine.Random.Range(_minLifeTimeThreshold, _maxLifeTimeThreshold);
+}
