@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshRenderer))]
+[RequireComponent(typeof(Renderer))]
 public class Cube : MonoBehaviour
 {
     [SerializeField] private List<Color> _colors = new List<Color>();
 
-    private MeshRenderer _meshRenderer;
+    private Renderer _meshRenderer;
     private Color _currentColor;
     private bool _isTouched = false;
     private float _lifeTime;
@@ -17,13 +17,13 @@ public class Cube : MonoBehaviour
     private Coroutine _waitBeforeDisappearingCoroutine;
 
     public Color StartColor => _currentColor;
-    public MeshRenderer MeshRenderer => _meshRenderer;
+    public Renderer MeshRenderer => _meshRenderer;
 
     public event Action<Cube> Disappearing;
 
     private void Awake()
     {
-        _meshRenderer = GetComponent<MeshRenderer>();
+        _meshRenderer = GetComponent<Renderer>();
         _currentColor = _meshRenderer.material.color;
     }
 
@@ -39,14 +39,12 @@ public class Cube : MonoBehaviour
                 }
 
                 _isTouched = true;
-                _lifeTime = GetLifeTime();
+                _lifeTime = Utils.GetLifeTime(_minLifeTimeThreshold, _maxLifeTimeThreshold);
                 _meshRenderer.material.color = GetColor();
                 _waitBeforeDisappearingCoroutine = StartCoroutine(WaitBeforeDisappearing());
             }
         }
     }
-
-    public void ResetLifeTime() => _lifeTime = 0;
 
     private IEnumerator WaitBeforeDisappearing()
     {
@@ -59,6 +57,4 @@ public class Cube : MonoBehaviour
     }
 
     private Color GetColor() => _colors[UnityEngine.Random.Range(0, _colors.Count - 1)];
-
-    private float GetLifeTime() => UnityEngine.Random.Range(_minLifeTimeThreshold, _maxLifeTimeThreshold);
 }

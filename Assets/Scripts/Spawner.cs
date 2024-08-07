@@ -1,61 +1,57 @@
+using System;
 using UnityEngine;
 using UnityEngine.Pool;
 
-public class Spawner : MonoBehaviour
+public class Spawner<T> : MonoBehaviour where T : MonoBehaviour
 {
-    [SerializeField] private Cube _cubePrefab;
-    [SerializeField] private Transform _startPoint;
-    [SerializeField] private Transform _endPoint;
-    [SerializeField] private float _repeatRate;
+    [SerializeField] private T _object;
     [SerializeField] private int _poolCapacity;
     [SerializeField] private int _poolMaxSize;
 
-    private ObjectPool<Cube> _cubePool;
+    protected ObjectPool<T> _pool;
+    protected int ObjectCounter = 0;
 
-    private void OnDisappeared(Cube cube)
-    {
-        cube.Disappearing -= OnDisappeared;
-        cube.MeshRenderer.material.color = cube.StartColor;
-        cube.ResetLifeTime();
-        _cubePool.Release(cube);
-    }
+    public event Action<int> ActiveQuantityChanged;
+    public event Action<int> CreateQuantityChanged;
 
     private void Awake()
     {
-        _cubePool = new ObjectPool<Cube>(
-        createFunc: () => Instantiate(_cubePrefab),
+        _pool = new ObjectPool<T>(
+        createFunc: () => Instantiate(_object),
         actionOnGet: (obj) => ActionOnGet(obj),
         actionOnRelease: (obj) => obj.gameObject.SetActive(false),
-        actionOnDestroy: (obj) => Destroy(obj),
-        collectionCheck: true,
+        actionOnDestroy: (obj) => ActionOnDestroy(obj),
+        collectionCheck: false,
         defaultCapacity: _poolCapacity,
         maxSize: _poolMaxSize);
     }
 
-    private void ActionOnGet(Cube cube)
+    public virtual int GetActiveObject() => _pool.CountActive;
+
+    protected void ActionOnDestroy(T obj)
     {
-        cube.transform.position = GetStartPosition();
-        cube.GetComponent<Rigidbody>().velocity = Vector3.zero;
-        cube.gameObject.SetActive(true);
-        cube.Disappearing += OnDisappeared;
+        Destroy(obj);
     }
 
-    private void Start()
+    protected virtual void ActionOnGet(T obj)
     {
-        InvokeRepeating(nameof(GetSphere), 0.0f, _repeatRate);
+        obj.GetComponent<Rigidbody>().velocity = Vector3.zero;
+        obj.gameObject.SetActive(true);
     }
 
-    private void GetSphere()
+    protected virtual T GetObject()
     {
-        _cubePool.Get();
+        return _pool.Get();
     }
 
-    private Vector3 GetStartPosition()
+    protected virtual void OnDisappeared(T obj)
     {
-        float positionX = UnityEngine.Random.Range(_startPoint.position.x, _endPoint.position.x);
-        float positionY = UnityEngine.Random.Range(_startPoint.position.y, _endPoint.position.y);
-        float positionZ = UnityEngine.Random.Range(_startPoint.position.z, _endPoint.position.z);
+        _pool.Release(obj);
+    }
 
-        return new Vector3(positionX, positionY, positionZ);
+    protected void ChangeObjectCount(int activeCount, int createdCount)
+    {
+        ActiveQuantityChanged?.Invoke(_pool.CountActive);
+        CreateQuantityChanged?.Invoke(createdCount);
     }
 }
