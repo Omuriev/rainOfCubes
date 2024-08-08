@@ -8,50 +8,56 @@ public class Spawner<T> : MonoBehaviour where T : MonoBehaviour
     [SerializeField] private int _poolCapacity;
     [SerializeField] private int _poolMaxSize;
 
-    protected ObjectPool<T> _pool;
+    protected ObjectPool<T> Pool;
     protected int ObjectCounter = 0;
 
     public event Action<int> ActiveQuantityChanged;
     public event Action<int> CreateQuantityChanged;
+    public event Action<int> AllObjectQuantityChanged;
 
     private void Awake()
     {
-        _pool = new ObjectPool<T>(
+        Pool = new ObjectPool<T>(
         createFunc: () => Instantiate(_object),
-        actionOnGet: (obj) => ActionOnGet(obj),
+        actionOnGet: (obj) => GetAction(obj),
         actionOnRelease: (obj) => obj.gameObject.SetActive(false),
-        actionOnDestroy: (obj) => ActionOnDestroy(obj),
+        actionOnDestroy: (obj) => DestroyObject(obj),
         collectionCheck: false,
         defaultCapacity: _poolCapacity,
         maxSize: _poolMaxSize);
     }
 
-    public virtual int GetActiveObject() => _pool.CountActive;
+    public virtual int GetActiveObject() => Pool.CountActive;
 
-    protected void ActionOnDestroy(T obj)
+    protected void DestroyObject(T obj)
     {
         Destroy(obj);
     }
 
-    protected virtual void ActionOnGet(T obj)
+    protected virtual void GetAction(T obj)
     {
-        obj.GetComponent<Rigidbody>().velocity = Vector3.zero;
+        if (obj.TryGetComponent(out Rigidbody rigidbody))
+        {
+            rigidbody.velocity = Vector3.zero;
+        }
+
         obj.gameObject.SetActive(true);
     }
 
     protected virtual T GetObject()
     {
-        return _pool.Get();
+        return Pool.Get();
     }
 
     protected virtual void OnDisappeared(T obj)
     {
-        _pool.Release(obj);
+        Pool.Release(obj);
     }
 
-    protected void ChangeObjectCount(int activeCount, int createdCount)
+    protected void ChangeObjectCount(int activeCount, int createdCount, int allObjectQuantity)
     {
-        ActiveQuantityChanged?.Invoke(_pool.CountActive);
+        ActiveQuantityChanged?.Invoke(Pool.CountActive);
         CreateQuantityChanged?.Invoke(createdCount);
+        AllObjectQuantityChanged?.Invoke(allObjectQuantity);
     }
 }

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BombSpawner : Spawner<Bomb>
@@ -8,24 +6,24 @@ public class BombSpawner : Spawner<Bomb>
 
     public void GetBomb(Vector3 position)
     {
-        Bomb bomb = _pool.Get();
+        Bomb bomb = Pool.Get();
         bomb.transform.position = position;
     }
 
-    protected override void ActionOnGet(Bomb obj)
+    protected override void GetAction(Bomb obj)
     {
-        base.ActionOnGet(obj);
-        obj.Disappearing += OnDisappeared;
+        base.GetAction(obj);
+        obj.Disappeared += OnDisappeared;
         _defaultColor = obj.GetComponent<Renderer>().material.color;
         ObjectCounter++;
-        ChangeObjectCount(_pool.CountActive, _pool.CountAll);
+        ChangeObjectCount(Pool.CountActive, Pool.CountAll, ObjectCounter);
     }
 
     protected override void OnDisappeared(Bomb bomb)
     {
-        bomb.Disappearing -= OnDisappeared;
-        _pool.Release(bomb);
+        bomb.Disappeared -= OnDisappeared;
+        Pool.Release(bomb);
         bomb.ChangeColor(_defaultColor);
-        ChangeObjectCount(_pool.CountActive, _pool.CountAll);
+        ChangeObjectCount(Pool.CountActive, Pool.CountAll, ObjectCounter);
     }
 }

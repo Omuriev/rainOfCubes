@@ -15,7 +15,7 @@ public class Bomb : MonoBehaviour
     private Coroutine _waitBeforeExplosionCoroutine;
     private Renderer _renderer;
 
-    public event Action<Bomb> Disappearing;
+    public event Action<Bomb> Disappeared;
 
     private void Awake() => _renderer = GetComponent<Renderer>();
 
@@ -71,6 +71,6 @@ public class Bomb : MonoBehaviour
         }
 
         Explode(GetExplodableObjects());
-        Disappearing?.Invoke(this);
+        Disappeared?.Invoke(this);
     }
 }

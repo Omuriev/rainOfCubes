@@ -1,4 +1,4 @@
-using System;
+using System.Collections;
 using UnityEngine;
 
 public class CubeSpawner : Spawner<Cube>
@@ -8,25 +8,25 @@ public class CubeSpawner : Spawner<Cube>
     [SerializeField] private float _repeatRate;
     [SerializeField] private BombSpawner _bombSpawner;
 
-    private void Start() => InvokeRepeating(nameof(GetObject), 0.0f, _repeatRate);
+    private void Start() => StartCoroutine(nameof(SpawnCube));
 
-    protected override void ActionOnGet(Cube obj)
+    protected override void GetAction(Cube cube)
     {
-        base.ActionOnGet(obj);
+        base.GetAction(cube);
 
-        obj.transform.position = GetStartPosition();
-        obj.Disappearing += OnDisappeared;
+        cube.transform.position = GetStartPosition();
+        cube.Disappeared += OnDisappeared;
         ObjectCounter++;
-        ChangeObjectCount(_pool.CountActive, _pool.CountAll);
+        ChangeObjectCount(Pool.CountActive, Pool.CountAll, ObjectCounter);
     }
 
     protected override void OnDisappeared(Cube cube)
     {
         cube.MeshRenderer.material.color = cube.StartColor;
-        cube.Disappearing -= OnDisappeared;
+        cube.Disappeared -= OnDisappeared;
         _bombSpawner.GetBomb(cube.transform.position);
-        _pool.Release(cube);
-        ChangeObjectCount(_pool.CountActive, _pool.CountAll);
+        Pool.Release(cube);
+        ChangeObjectCount(Pool.CountActive, Pool.CountAll, ObjectCounter);
     }
 
     private Vector3 GetStartPosition()
@@ -36,5 +36,15 @@ public class CubeSpawner : Spawner<Cube>
         float positionZ = UnityEngine.Random.Range(_startPoint.position.z, _endPoint.position.z);
 
         return new Vector3(positionX, positionY, positionZ);
+    }
+
+    private IEnumerator SpawnCube()
+    {
+        WaitForSeconds waitTime = new WaitForSeconds(_repeatRate);
+        while (true)
+        {
+            GetObject();
+            yield return waitTime;
+        }
     }
 }

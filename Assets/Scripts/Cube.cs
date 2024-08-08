@@ -16,10 +16,10 @@ public class Cube : MonoBehaviour
     private float _maxLifeTimeThreshold = 5;
     private Coroutine _waitBeforeDisappearingCoroutine;
 
+    public event Action<Cube> Disappeared;
+
     public Color StartColor => _currentColor;
     public Renderer MeshRenderer => _meshRenderer;
-
-    public event Action<Cube> Disappearing;
 
     private void Awake()
     {
@@ -53,7 +53,7 @@ public class Cube : MonoBehaviour
         yield return waitTime;
 
         _isTouched = false;
-        Disappearing?.Invoke(this);
+        Disappeared?.Invoke(this);
     }
 
     private Color GetColor() => _colors[UnityEngine.Random.Range(0, _colors.Count - 1)];
